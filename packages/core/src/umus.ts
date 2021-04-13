@@ -1,6 +1,6 @@
+import * as _ from "lodash/fp";
 import diff from "virtual-dom/diff";
 import patch from "virtual-dom/patch";
-import * as _ from "lodash/fp";
 import createElement from "virtual-dom/create-element";
 
 type UmusOps<Model, Handlers> = {
