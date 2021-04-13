@@ -66,6 +66,3 @@ export const create = <Model, Handlers>({
     },
   };
 };
-
-export const makeMsg = () => 0;
-export const msg = <T>(container: T) => container;
