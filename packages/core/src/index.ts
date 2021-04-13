@@ -13,9 +13,9 @@ const app = Umus.create({
   },
   view: (model, { increment, decrement }) =>
     div({}, [
-      button({ onClick: increment }, [text("+")]),
+      button({ onclick: increment }, [text("+")]),
       div({}, [text(model.count.toString())]),
-      button({ onClick: decrement }, [text("-")]),
+      button({ onclick: decrement }, [text("-")]),
     ]),
 });
 

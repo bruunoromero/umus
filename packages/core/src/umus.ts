@@ -11,7 +11,7 @@ type UmusOps<Model, Handlers> = {
     actions: {
       [K in keyof Handlers]: (model: Model) => Model;
     }
-  ) => (model: Model) => VirtualDOM.VNode;
+  ) => VirtualDOM.VNode;
 };
 
 type Actions<T, M> = {
@@ -31,18 +31,16 @@ export const create = <Model, Handlers>({
   let tree: VirtualDOM.VNode;
   let node: Element;
 
-  const keys = Object.keys(update);
-
   const boundUpdate = _.reduce(
     (acc, key) => {
       return _.update(
         key,
         (fn) => {
-          return (model: Model) => {
-            state = fn(model);
+          return () => {
+            state = fn(state);
 
             if (tree && node) {
-              const newTree = view(state, boundUpdate)(state);
+              const newTree = view(state, boundUpdate);
               const patches = diff(tree, newTree);
               node = patch(node, patches);
               tree = newTree;
@@ -53,13 +51,13 @@ export const create = <Model, Handlers>({
       );
     },
     update,
-    keys
+    Object.keys(update)
   );
 
   return {
     run: ({ el }: UmusAppOps) => {
       if (el) {
-        tree = view(state, boundUpdate)(state);
+        tree = view(state, boundUpdate);
         node = createElement(tree);
         el.appendChild(node);
       }
