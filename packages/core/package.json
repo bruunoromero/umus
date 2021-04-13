@@ -1,0 +1,21 @@
+{
+  "name": "@umus/core",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "parcel public/index.html"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.168",
+    "@types/virtual-dom": "^2.1.0",
+    "parcel": "^2.0.0-beta.2",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.2.4"
+  },
+  "dependencies": {
+    "immutable": "^4.0.0-rc.12",
+    "lodash": "^4.17.21",
+    "virtual-dom": "^2.1.1"
+  }
+}
