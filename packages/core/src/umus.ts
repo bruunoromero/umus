@@ -9,12 +9,7 @@ export type BoundUpdater<Msg> = (msg: Msg) => void;
 type UmusOps<Model, Msg> = {
   init: Model;
   update: Updater<Model, Msg>;
-  view: (
-    model: Model
-  ) => (
-    updater: BoundUpdater<Msg>,
-    mapWith: (a: any) => any
-  ) => VirtualDOM.VNode;
+  view: (model: Model) => (updater: BoundUpdater<Msg>) => VirtualDOM.VNode;
 };
 
 type UmusAppOps = {
@@ -35,7 +30,7 @@ export const create = <Model, Msg>({
 
     if (tree && node && newState !== state) {
       state = newState;
-      const newTree = view(state)(boundUpdate, _.identity);
+      const newTree = view(state)(boundUpdate);
       const patches = diff(tree, newTree);
       node = patch(node, patches);
       tree = newTree;
@@ -45,7 +40,7 @@ export const create = <Model, Msg>({
   return {
     run: ({ el }: UmusAppOps) => {
       if (el) {
-        tree = view(state)(boundUpdate, _.identity);
+        tree = view(state)(boundUpdate);
         node = createElement(tree);
         el.appendChild(node);
       }
