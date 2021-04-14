@@ -1,53 +1,65 @@
+import { value } from "./attrs";
+import { onClick, onInput } from "./events";
 import { button, div, input, mapMsg, text } from "./html";
-import * as Umus from "./umus";
+import { create, View } from "./umus";
 
 type Model = typeof init;
 
 type Msg = { type: "increment" | "decrement" | "onInput"; [x: string]: any };
-type InputMsg = { type: "change" };
+type InputMsg = { type: "change"; [x: string]: any };
 
-const init = { count: 0 };
+const init = { count: 0, value: "" };
 
 const Msg = {
-  increment: (): Msg => ({ type: "increment" }),
-  decrement: (): Msg => ({ type: "decrement" }),
+  increment: { type: "increment" },
+  decrement: { type: "decrement" },
   onInput: (msg: InputMsg): Msg => ({ type: "onInput", payload: msg }),
 };
 
 const InputMsg = {
-  change: () => ({ type: "change" }),
+  change: (value: string): InputMsg => ({ type: "change", payload: value }),
 };
 
 const update = (model: Model, msg: Msg) => {
-  console.log(msg);
   if (msg.type === "increment") {
-    return { count: model.count + 1 };
+    return { ...model, count: model.count + 1 };
   }
 
   if (msg.type === "decrement") {
-    return { count: model.count - 1 };
+    return { ...model, count: model.count - 1 };
   }
 
   if (msg.type === "onInput") {
-    console.log("ola");
-    return model;
+    return { ...model, value: updateInput(msg.payload) };
   }
 
   return model;
 };
 
-const view = (model: Model) =>
-  div({}, [
-    button({ onclick: Msg.increment() }, [text("+")]),
-    div({}, [text(model.count.toString())]),
-    button({ onclick: Msg.decrement() }, [text("-")]),
-    mapMsg<Msg, InputMsg>(
-      div({}, [input({ oninput: InputMsg.change() }, [])]),
-      Msg.onInput
-    ),
-  ]);
+function updateInput(msg: InputMsg) {
+  if (msg.type === "change") {
+    return msg.payload;
+  }
 
-const app = Umus.create({
+  return "";
+}
+
+const view = (model: Model): View<Msg> =>
+  div(
+    [],
+    [
+      button([onClick(Msg.increment)], [text("+")]),
+      div([], [text(model.count.toString())]),
+      button([onClick(Msg.decrement)], [text("-")]),
+      mapMsg(
+        div([], [input([onInput(InputMsg.change), value(model.value)])]),
+        Msg.onInput
+      ),
+      text(model.value),
+    ]
+  );
+
+const app = create({
   init,
   update,
   view,

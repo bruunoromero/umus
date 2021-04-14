@@ -1,32 +1,26 @@
 import * as _ from "lodash/fp";
 import h from "virtual-dom/h";
-import { createProperties } from "virtual-dom";
 import { BoundUpdater } from "./umus";
 
 type ElementBuilder<Msg> = (
   updater: BoundUpdater<Msg>
 ) => VirtualDOM.VNode | string;
 
+type AttributeName = "onclick" | "oninput" | "value";
+
+type Attribute = Partial<Record<AttributeName, any>>;
+
 const makeElementBuilder = (tag: string) => {
-  return <Msg>(
-    { onclick, oninput, ...attrs }: createProperties,
-    children: ElementBuilder<Msg>[]
-  ) => (updater: BoundUpdater<Msg>) => {
-    const boundAttrs = _.mergeAll([
-      attrs,
-      {
-        onclick: () => {
-          if (onclick) {
-            updater(onclick);
-          }
-        },
-        oninput: () => {
-          if (oninput) {
-            updater(oninput);
-          }
-        },
-      },
-    ]);
+  return <Msg>(attrs: Attribute[], children: ElementBuilder<Msg>[]) => (
+    updater: BoundUpdater<Msg>
+  ) => {
+    const mergedAttrs = _.mergeAll(attrs);
+
+    const boundAttrs = _.mapValues((attr) => {
+      if (attr instanceof Function) {
+        return attr(updater);
+      }
+    }, mergedAttrs);
 
     const buildChildren = children.map((child) => child(updater));
 
@@ -34,9 +28,13 @@ const makeElementBuilder = (tag: string) => {
   };
 };
 
+const makeSelfClosingElementBuilder = (tag: string) => <Msg>(
+  attrs: Attribute[]
+) => makeElementBuilder(tag)<Msg>(attrs, []);
+
 export const div = makeElementBuilder("div");
-export const input = makeElementBuilder("input");
 export const button = makeElementBuilder("button");
+export const input = makeSelfClosingElementBuilder("input");
 export const text = (content: string) => (_: any) => content;
 
 export const mapMsg = <Msg, ChildMsg>(

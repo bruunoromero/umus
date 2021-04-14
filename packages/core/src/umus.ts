@@ -3,13 +3,14 @@ import diff from "virtual-dom/diff";
 import patch from "virtual-dom/patch";
 import createElement from "virtual-dom/create-element";
 
-export type Updater<Model, Msg> = (model: Model, msg: Msg) => Model;
 export type BoundUpdater<Msg> = (msg: Msg) => void;
+export type Updater<Model, Msg> = (model: Model, msg: Msg) => Model;
+export type View<Msg> = (updater: BoundUpdater<Msg>) => VirtualDOM.VNode;
 
 type UmusOps<Model, Msg> = {
   init: Model;
   update: Updater<Model, Msg>;
-  view: (model: Model) => (updater: BoundUpdater<Msg>) => VirtualDOM.VNode;
+  view: (model: Model) => View<Msg>;
 };
 
 type UmusAppOps = {
