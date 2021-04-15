@@ -2,16 +2,18 @@ import * as _ from "lodash/fp";
 import h from "virtual-dom/h";
 import { BoundUpdater } from "./umus";
 
+export type Event<Msg> = (updater: BoundUpdater<Msg>) => (evt: any) => void;
+
 type ElementBuilder<Msg> = (
   updater: BoundUpdater<Msg>
 ) => VirtualDOM.VNode | string;
 
 type AttributeName = "onclick" | "oninput" | "value";
 
-type Attribute = Partial<Record<AttributeName, any>>;
+type Attribute<Msg> = Partial<Record<AttributeName, string | Event<Msg>>>;
 
 const makeElementBuilder = (tag: string) => {
-  return <Msg>(attrs: Attribute[], children: ElementBuilder<Msg>[]) => (
+  return <Msg>(attrs: Attribute<Msg>[], children: ElementBuilder<Msg>[]) => (
     updater: BoundUpdater<Msg>
   ) => {
     const mergedAttrs = _.mergeAll(attrs);
@@ -29,7 +31,7 @@ const makeElementBuilder = (tag: string) => {
 };
 
 const makeSelfClosingElementBuilder = (tag: string) => <Msg>(
-  attrs: Attribute[]
+  attrs: Attribute<Msg>[]
 ) => makeElementBuilder(tag)<Msg>(attrs, []);
 
 export const div = makeElementBuilder("div");

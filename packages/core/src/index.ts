@@ -5,19 +5,23 @@ import { create, View } from "./umus";
 
 type Model = typeof init;
 
-type Msg = { type: "increment" | "decrement" | "onInput"; [x: string]: any };
-type InputMsg = { type: "change"; [x: string]: any };
-
 const init = { count: 0, value: "" };
 
+type Msg =
+  | { type: "increment" }
+  | { type: "decrement" }
+  | { type: "onInput"; payload: InputMsg };
+
 const Msg = {
-  increment: { type: "increment" },
-  decrement: { type: "decrement" },
-  onInput: (msg: InputMsg): Msg => ({ type: "onInput", payload: msg }),
+  increment: { type: "increment" } as Msg,
+  decrement: { type: "decrement" } as Msg,
+  onInput: (payload: InputMsg) => ({ type: "onInput", payload } as Msg),
 };
 
+type InputMsg = { type: "change"; payload: string };
+
 const InputMsg = {
-  change: (value: string): InputMsg => ({ type: "change", payload: value }),
+  change: (payload: string) => ({ type: "change", payload } as InputMsg),
 };
 
 const update = (model: Model, msg: Msg) => {
@@ -36,13 +40,13 @@ const update = (model: Model, msg: Msg) => {
   return model;
 };
 
-function updateInput(msg: InputMsg) {
+const updateInput = (msg: InputMsg) => {
   if (msg.type === "change") {
     return msg.payload;
   }
 
   return "";
-}
+};
 
 const view = (model: Model): View<Msg> =>
   div(
