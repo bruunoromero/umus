@@ -22,6 +22,8 @@ const makeElementBuilder = (tag: string) => {
       if (attr instanceof Function) {
         return attr(updater);
       }
+
+      return attr;
     }, mergedAttrs);
 
     const buildChildren = children.map((child) => child(updater));
