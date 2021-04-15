@@ -32,7 +32,7 @@ const makeElementBuilder = (tag: string) => {
 
 const makeSelfClosingElementBuilder = (tag: string) => <Msg>(
   attrs: Attribute<Msg>[]
-) => makeElementBuilder(tag)<Msg>(attrs, []);
+) => makeElementBuilder(tag)(attrs, []);
 
 export const div = makeElementBuilder("div");
 export const button = makeElementBuilder("button");
