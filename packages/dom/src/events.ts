@@ -1,4 +1,4 @@
-import { BoundUpdater } from "./umus";
+import { BoundUpdater } from "@umus/common";
 
 export const onClick = <Msg>(msg: Msg) => {
   return {

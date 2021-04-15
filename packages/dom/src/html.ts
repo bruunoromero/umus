@@ -1,6 +1,6 @@
+import { BoundUpdater } from "@umus/common";
 import * as _ from "lodash/fp";
 import h from "virtual-dom/h";
-import { BoundUpdater } from "./umus";
 
 export type Event<Msg> = (updater: BoundUpdater<Msg>) => (evt: any) => void;
 

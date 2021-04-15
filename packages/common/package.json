@@ -1,5 +1,5 @@
 {
-  "name": "@umus/core",
+  "name": "@umus/common",
   "version": "1.0.0",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -10,8 +10,5 @@
   },
   "devDependencies": {
     "typescript": "^4.2.4"
-  },
-  "dependencies": {
-    "@umus/common": "1.0.0"
   }
 }

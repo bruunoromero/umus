@@ -1,74 +1,74 @@
-import { value } from "./attrs";
-import { onClick, onInput } from "./events";
-import { button, div, input, mapMsg, text } from "./html";
-import { create, View } from "./umus";
+import { UmusUpdater } from "./updater";
+import {
+  ClassOf,
+  ViewCreator,
+  View,
+  BoundUpdater,
+  Platform,
+  UpdateFn,
+} from "@umus/common";
 
-type Model = typeof init;
-
-const init = { count: 0, value: "" };
-
-type Msg =
-  | { type: "increment" }
-  | { type: "decrement" }
-  | { type: "onInput"; payload: InputMsg };
-
-const Msg = {
-  increment: { type: "increment" } as Msg,
-  decrement: { type: "decrement" } as Msg,
-  onInput: (payload: InputMsg) => ({ type: "onInput", payload } as Msg),
+type UmusOps<Model, Msg, RenderState> = {
+  init: Model;
+  update: UpdateFn<Model, Msg>;
+  view: ViewCreator<Model, Msg, RenderState>;
 };
 
-type InputMsg = { type: "change"; payload: string };
-
-const InputMsg = {
-  change: (payload: string) => ({ type: "change", payload } as InputMsg),
+type UmusAppOps<Container> = {
+  el: Container | null;
 };
 
-const update = (model: Model, msg: Msg) => {
-  if (msg.type === "increment") {
-    return { ...model, count: model.count + 1 };
-  }
+const createBoundUpdater = <RenderState, Container, Model, Msg>(
+  platform: Platform<RenderState, Container>,
+  updater: UmusUpdater<Model, Msg>,
+  viewCreator: ViewCreator<Model, Msg, RenderState>
+) => {
+  const boundUpdate = (msg: Msg) => {
+    const [shouldUpdate, model] = updater.update(msg);
 
-  if (msg.type === "decrement") {
-    return { ...model, count: model.count - 1 };
-  }
+    if (shouldUpdate) {
+      const view = viewCreator(model);
+      platform.update(view(boundUpdate));
+    }
+  };
 
-  if (msg.type === "onInput") {
-    return { ...model, value: updateInput(msg.payload) };
-  }
-
-  return model;
+  return boundUpdate;
 };
 
-const updateInput = (msg: InputMsg) => {
-  if (msg.type === "change") {
-    return msg.payload;
+class UmusApp<RenderState, Container, Msg> {
+  constructor(
+    private readonly platform: Platform<RenderState, Container>,
+    private readonly view: View<Msg, RenderState>,
+    private readonly boundUpdate: BoundUpdater<Msg>
+  ) {}
+
+  run({ el }: UmusAppOps<Container>) {
+    if (el) {
+      this.platform.create(this.view(this.boundUpdate), el);
+    }
   }
+}
 
-  return "";
-};
+class Creator<RenderState, Container> {
+  constructor(private readonly platform: Platform<RenderState, Container>) {}
 
-const view = (model: Model): View<Msg> =>
-  div(
-    [],
-    [
-      button([onClick(Msg.increment)], [text("+")]),
-      div([], [text(model.count.toString())]),
-      button([onClick(Msg.decrement)], [text("-")]),
-      mapMsg(
-        div([], [input([onInput(InputMsg.change), value(model.value)])]),
-        Msg.onInput
-      ),
-      text(model.value),
-    ]
-  );
+  create<Model, Msg>({
+    view: viewCreator,
+    init,
+    update,
+  }: UmusOps<Model, Msg, RenderState>) {
+    const updater = new UmusUpdater(init, update);
+    const boundUpdate = createBoundUpdater(this.platform, updater, viewCreator);
 
-const app = create({
-  init,
-  update,
-  view,
-});
+    return new UmusApp(this.platform, viewCreator(init), boundUpdate);
+  }
+}
 
-app.run({
-  el: document.querySelector("#app"),
-});
+export class Umus {
+  static bind<RenderState, Container>(
+    ctor: ClassOf<Platform<RenderState, Container>>
+  ) {
+    const platform = new ctor();
+    return new Creator(platform);
+  }
+}
