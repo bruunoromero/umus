@@ -6,33 +6,31 @@ import {
   BoundUpdater,
   Platform,
   UpdateFn,
+  UpdateCmdFn,
+  PlatformCmd,
 } from "@umus/common";
+import { Subject, Subscribable } from "rxjs";
+import { Cmd } from "./cmd";
+import { Binder } from "./binder";
+import { Sub } from "./sub";
+export { Cmd } from "./cmd";
+export { Sub } from "./sub";
 
-type UmusOps<Model, Msg, RenderState> = {
+type SandboxOps<Model, Msg, RenderState> = {
   init: Model;
   update: UpdateFn<Model, Msg>;
   view: ViewCreator<Model, Msg, RenderState>;
 };
 
-type UmusAppOps<Container> = {
-  el: Container | null;
+type ElementOps<Model, Msg, RenderState> = {
+  init: [Model, PlatformCmd<Msg>];
+  update: UpdateCmdFn<Model, Msg>;
+  view: ViewCreator<Model, Msg, RenderState>;
+  subscriptions: (model: Model) => Subscribable<Msg>;
 };
 
-const createBoundUpdater = <RenderState, Container, Model, Msg>(
-  platform: Platform<RenderState, Container>,
-  updater: UmusUpdater<Model, Msg>,
-  viewCreator: ViewCreator<Model, Msg, RenderState>
-) => {
-  const boundUpdate = (msg: Msg) => {
-    const [shouldUpdate, model] = updater.update(msg);
-
-    if (shouldUpdate) {
-      const view = viewCreator(model);
-      platform.update(view(boundUpdate));
-    }
-  };
-
-  return boundUpdate;
+type UmusAppOps<Container> = {
+  el: Container | null;
 };
 
 class UmusApp<RenderState, Container, Msg> {
@@ -52,15 +50,41 @@ class UmusApp<RenderState, Container, Msg> {
 class Creator<RenderState, Container> {
   constructor(private readonly platform: Platform<RenderState, Container>) {}
 
-  create<Model, Msg>({
+  sandbox<Model, Msg>({
     view: viewCreator,
     init,
     update,
-  }: UmusOps<Model, Msg, RenderState>) {
-    const updater = new UmusUpdater(init, update);
-    const boundUpdate = createBoundUpdater(this.platform, updater, viewCreator);
+  }: SandboxOps<Model, Msg, RenderState>) {
+    const noneUpdate = (model: Model, msg: Msg): [Model, PlatformCmd<Msg>] => [
+      update(model, msg),
+      Cmd.none<Msg>(),
+    ];
 
-    return new UmusApp(this.platform, viewCreator(init), boundUpdate);
+    const updater = new UmusUpdater([init, Cmd.none<Msg>()], noneUpdate);
+    const binder = new Binder(init, this.platform, updater, viewCreator, () =>
+      Sub.none<Msg>()
+    );
+
+    return new UmusApp(this.platform, viewCreator(init), binder.update);
+  }
+
+  element<Model, Msg>({
+    view: viewCreator,
+    init,
+    update,
+    subscriptions,
+  }: ElementOps<Model, Msg, RenderState>) {
+    const [model] = init;
+    const updater = new UmusUpdater(init, update);
+    const binder = new Binder(
+      model,
+      this.platform,
+      updater,
+      viewCreator,
+      subscriptions
+    );
+
+    return new UmusApp(this.platform, viewCreator(model), binder.update);
   }
 }
 
@@ -70,5 +94,9 @@ export class Umus {
   ) {
     const platform = new ctor();
     return new Creator(platform);
+  }
+
+  static port<Msg>() {
+    return new Subject<Msg>();
   }
 }

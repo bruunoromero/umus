@@ -16,3 +16,11 @@ export interface Platform<RenderState, Container> {
 }
 
 export type UpdateFn<Model, Msg> = (model: Model, msg: Msg) => Model;
+export type UpdateCmdFn<Model, Msg> = (
+  model: Model,
+  msg: Msg
+) => [Model, PlatformCmd<Msg>];
+
+export interface PlatformCmd<Msg> {
+  receive(fn: (msg: Msg) => void): void;
+}

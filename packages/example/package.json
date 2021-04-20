@@ -17,7 +17,10 @@
   "dependencies": {
     "@umus/core": "1.0.0",
     "@umus/dom": "1.0.0",
+    "immutable": "^4.0.0-rc.12",
     "lodash": "^4.17.21",
+    "ts-union": "^2.3.0",
+    "type-fest": "^1.0.2",
     "virtual-dom": "^2.1.1"
   }
 }

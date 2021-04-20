@@ -10,52 +10,43 @@ import {
   value,
   View,
 } from "@umus/dom";
-import { Umus } from "@umus/core";
+import { Cmd, Umus, Sub } from "@umus/core";
+import { Union, of } from "ts-union";
+import { Record } from "immutable";
 
-type Model = typeof init;
+const makeModel = Record({ count: 0, value: "" });
 
-const init = { count: 0, value: "" };
+const model = makeModel();
 
-type Msg =
-  | { type: "increment" }
-  | { type: "decrement" }
-  | { type: "onInput"; payload: InputMsg };
+type Model = ReturnType<typeof makeModel>;
 
-const Msg = {
-  increment: { type: "increment" } as Msg,
-  decrement: { type: "decrement" } as Msg,
-  onInput: (payload: InputMsg) => ({ type: "onInput", payload } as Msg),
-};
+const Msg = Union({
+  init: of(null),
+  increment: of(null),
+  decrement: of(null),
+  onInput: of<InputMsg>(),
+});
 
-type InputMsg = { type: "change"; payload: string };
+type Msg = typeof Msg.T;
 
-const InputMsg = {
-  change: (payload: string) => ({ type: "change", payload } as InputMsg),
-};
+const InputMsg = Union({
+  change: of<string>(),
+});
 
-const update = (model: Model, msg: Msg) => {
-  if (msg.type === "increment") {
-    return { ...model, count: model.count + 1 };
-  }
+type InputMsg = typeof InputMsg.T;
 
-  if (msg.type === "decrement") {
-    return { ...model, count: model.count - 1 };
-  }
+const update = (model: Model, msg: Msg): [Model, Cmd<Msg>] =>
+  Msg.match(msg, {
+    init: () => [model.set("count", 10), Cmd.none()],
+    increment: () => [model.update("count", (count) => count + 1), Cmd.none()],
+    decrement: () => [model.update("count", (count) => count - 1), Cmd.none()],
+    onInput: (msg) => [model.set("value", updateInput(msg)), Cmd.none()],
+  });
 
-  if (msg.type === "onInput") {
-    return { ...model, value: updateInput(msg.payload) };
-  }
-
-  return model;
-};
-
-const updateInput = (msg: InputMsg) => {
-  if (msg.type === "change") {
-    return msg.payload;
-  }
-
-  return "";
-};
+const updateInput = (msg: InputMsg) =>
+  InputMsg.match(msg, {
+    change: (payload) => payload,
+  });
 
 const view = (model: Model): View<Msg> =>
   div(
@@ -72,10 +63,21 @@ const view = (model: Model): View<Msg> =>
     ]
   );
 
-const app = Umus.bind(UmusDOM).create({
-  init,
+const initComplete = Umus.port<Msg>();
+const startInit = Umus.port<Msg>();
+
+startInit.subscribe(() => {
+  console.log("start called");
+  setTimeout(() => {
+    initComplete.next(Msg.init);
+  }, 2000);
+});
+
+const app = Umus.bind(UmusDOM).element({
+  init: [model, Cmd.fromPort<Msg>(startInit)],
   update,
   view,
+  subscriptions: () => initComplete,
 });
 
 app.run({

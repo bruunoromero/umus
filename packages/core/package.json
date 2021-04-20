@@ -12,6 +12,7 @@
     "typescript": "^4.2.4"
   },
   "dependencies": {
-    "@umus/common": "1.0.0"
+    "@umus/common": "1.0.0",
+    "rxjs": "^6.6.7"
   }
 }
